@@ -1,0 +1,9 @@
+{
+  "product_name": "Relationship Pipeline",
+  "tagline": "Sanitized worked example: observed failures become narrow binary regression tests.",
+  "evaluation_contract": "Test whether contact extraction, application logging, and pipeline analysis respect grounding and user-approval boundaries. Blocking failures prevent release even when the aggregate pass rate is high.",
+  "trace_count": "Not published",
+  "limitations": "This public example contains fictionalized reproductions derived from observed failure modes. It is not the private production dataset, does not estimate real-world prevalence, and does not validate a model judge.",
+  "evaluator_summary": "All six example cases use deterministic subset assertions. This is sufficient for structured fields, counts, grounding markers, and approval state. Natural-language usefulness remains outside this small public example.",
+  "judge_calibration": "No model judge is used. Adding one would require human-labeled train, development, and untouched test sets plus separate true-positive and true-negative reporting."
+}

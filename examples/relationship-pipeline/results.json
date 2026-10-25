@@ -1,0 +1,85 @@
+{
+  "suite": "relationship-pipeline-sanitized-example",
+  "run_id": "example-20261025T105240665Z",
+  "run_at": "2026-10-25T10:52:40.665Z",
+  "run_context": {
+    "status": "example",
+    "model": "fixture outputs; no live model",
+    "model_settings": {},
+    "instructions_hash": "unavailable",
+    "evaluator_version": "example-v1",
+    "contract_version": "example-v1",
+    "source_hashes": {
+      "cases": "18b93cd10a0406ad00e19459a333f8bf528c08bc865f8ed093f39b686287038a",
+      "failure_modes": "0fa36bf272e70e38fb84376ed1c55a951308807985dc6dfefddd94da1f7e349a",
+      "sample_outputs": "d12bfc69bf0e56ece4c938df728ebb9dd687ea21d414576fcd74eb0bb4af13d6"
+    }
+  },
+  "cases": [
+    {
+      "case_id": "contact-001",
+      "failure_mode_id": "contact-tone-leakage",
+      "status": "fail",
+      "observed": {
+        "name": "Jordan Lee",
+        "company": "Northstar",
+        "warmth": "warm"
+      },
+      "details": "Expected {\"name\":\"Jordan Lee\",\"company\":\"Northstar\",\"warmth\":\"cold\"}; received {\"name\":\"Jordan Lee\",\"company\":\"Northstar\",\"warmth\":\"warm\"}."
+    },
+    {
+      "case_id": "contact-002",
+      "failure_mode_id": "contact-tone-leakage",
+      "status": "pass",
+      "observed": {
+        "name": "Morgan Diaz",
+        "warmth": "warm"
+      }
+    },
+    {
+      "case_id": "contact-003",
+      "failure_mode_id": "contact-invention",
+      "status": "pass",
+      "observed": {
+        "name": null
+      }
+    },
+    {
+      "case_id": "application-001",
+      "failure_mode_id": "premature-state-change",
+      "status": "pass",
+      "observed": {
+        "applications_count": 1,
+        "readyToLog": false
+      }
+    },
+    {
+      "case_id": "application-002",
+      "failure_mode_id": "premature-state-change",
+      "status": "pass",
+      "observed": {
+        "readyToLog": true
+      }
+    },
+    {
+      "case_id": "analysis-001",
+      "failure_mode_id": "ungrounded-analysis",
+      "status": "pass",
+      "observed": {
+        "weakest_stage": "referrals",
+        "cited_values": [
+          0,
+          3
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 1,
+    "errored": 0,
+    "total": 6
+  },
+  "release_decision": "block",
+  "release_reason": "Blocking failures remain: contact-001."
+}

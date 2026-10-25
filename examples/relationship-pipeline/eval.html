@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Relationship Pipeline | Eval report</title>
+  <script>
+    try {
+      const savedTheme = localStorage.getItem('eval-theme');
+      if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+    } catch (_) {}
+  </script>
+  <style>
+    :root {
+      --canvas: #f6f3ec;
+      --surface: #fffdf8;
+      --ink: #20201d;
+      --muted: #6d6a62;
+      --line: #d9d4c8;
+      --accent: #305b4f;
+      --accent-soft: #dfebe6;
+      --pass: #237346;
+      --pass-soft: #e1f1e7;
+      --fail: #aa3434;
+      --fail-soft: #f8e3e0;
+      --warn: #8a6418;
+      --warn-soft: #f3ead5;
+      color-scheme: light;
+    }
+    :root[data-theme="dark"] {
+      --canvas: #171816;
+      --surface: #21231f;
+      --ink: #f2efe7;
+      --muted: #aaa69d;
+      --line: #3d403a;
+      --accent: #9bcdb9;
+      --accent-soft: #263b33;
+      --pass: #7bd39d;
+      --pass-soft: #20382a;
+      --fail: #ff9890;
+      --fail-soft: #432524;
+      --warn: #e3c375;
+      --warn-soft: #3b321f;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--canvas); }
+    body {
+      margin: 0;
+      padding: 0 20px 80px;
+      overflow-x: hidden;
+      background: var(--canvas);
+      color: var(--ink);
+      font: 15px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button { font: inherit; }
+    .wrap { width: min(100%, 980px); max-width: 100%; min-width: 0; margin-inline: auto; }
+    header { padding: 48px 0 20px; display: flex; gap: 20px; align-items: flex-start; }
+    header > div { flex: 1; min-width: 0; }
+    .eyebrow { margin: 0 0 8px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    h1 { margin: 0; font: 750 clamp(32px, 6vw, 52px)/1.05 Georgia, serif; letter-spacing: -.035em; }
+    .tagline { max-width: 70ch; margin: 14px 0 0; color: var(--muted); font-size: 17px; }
+    .theme-toggle { flex: none; border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; background: var(--surface); color: var(--ink); cursor: pointer; }
+    nav { position: sticky; top: 0; z-index: 4; display: flex; gap: 8px; padding: 12px 0; overflow-x: auto; background: var(--canvas); border-bottom: 1px solid var(--line); }
+    [role="tab"] { flex: none; border: 0; border-radius: 999px; padding: 8px 14px; background: transparent; color: var(--muted); font-weight: 700; cursor: pointer; }
+    [role="tab"][aria-selected="true"] { background: var(--ink); color: var(--canvas); }
+    [role="tab"]:focus-visible, .theme-toggle:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    [role="tabpanel"] { padding-top: 34px; }
+    [role="tabpanel"][hidden] { display: none; }
+    h2 { margin: 42px 0 8px; font-size: 24px; letter-spacing: -.02em; }
+    h2:first-child { margin-top: 0; }
+    h3 { margin: 26px 0 7px; font-size: 17px; }
+    p { max-width: 75ch; }
+    h1, h2, h3, p, td { overflow-wrap: anywhere; }
+    pre { overflow: auto; white-space: pre-wrap; word-break: break-word; padding: 14px; border-radius: 10px; background: var(--accent-soft); }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 18px 0; }
+    .card { padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    .card h3 { margin-top: 0; }
+    .meta, .badge-row { display: flex; flex-wrap: wrap; gap: 7px; }
+    .badge { display: inline-block; border-radius: 999px; padding: 3px 9px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 750; }
+    .pass { background: var(--pass-soft); color: var(--pass); }
+    .fail { background: var(--fail-soft); color: var(--fail); }
+    .warn { background: var(--warn-soft); color: var(--warn); }
+    .metric { font-size: 30px; font-weight: 800; }
+    .label { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .case { margin: 16px 0; padding: 18px; border-left: 4px solid var(--line); background: var(--surface); }
+    .case[data-status="pass"] { border-left-color: var(--pass); }
+    .case[data-status="fail"] { border-left-color: var(--fail); }
+    .case h3 { margin-top: 0; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 660px; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .07em; }
+    .decision { padding: 18px; border-radius: 12px; background: var(--fail-soft); color: var(--fail); font-weight: 700; }
+    .fine { color: var(--muted); font-size: 13px; }
+    @media (max-width: 640px) {
+      body { padding-inline: 15px; }
+      header { padding-top: 30px; flex-wrap: wrap; }
+      .grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      [role="tabpanel"]:not([hidden]) { animation: reveal 150ms ease-out; }
+      @keyframes reveal { from { opacity: 0; transform: translateY(3px); } }
+    }
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <div>
+      <p class="eyebrow">Eval report · 2026-10-25</p>
+      <h1>Relationship Pipeline</h1>
+      <p class="tagline">Sanitized worked example: observed failures become narrow binary regression tests.</p>
+    </div>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">Theme</button>
+  </header>
+
+  <nav class="wrap" role="tablist" aria-label="Eval report sections">
+    <button role="tab" aria-selected="true" aria-controls="overview" data-panel="overview">Overview</button>
+    <button role="tab" aria-selected="false" aria-controls="failures" data-panel="failures" tabindex="-1">Failure Modes</button>
+    <button role="tab" aria-selected="false" aria-controls="cases" data-panel="cases" tabindex="-1">Cases</button>
+    <button role="tab" aria-selected="false" aria-controls="evaluators" data-panel="evaluators" tabindex="-1">Evaluators</button>
+    <button role="tab" aria-selected="false" aria-controls="results" data-panel="results" tabindex="-1">Results</button>
+  </nav>
+
+  <main>
+    <section class="wrap" id="overview" role="tabpanel">
+      <h2>Evaluation contract</h2>
+      <p>Test whether contact extraction, application logging, and pipeline analysis respect grounding and user-approval boundaries. Blocking failures prevent release even when the aggregate pass rate is high.</p>
+      <div class="grid">
+        <article class="card"><div class="metric">Not published</div><div class="label">Traces reviewed</div></article>
+        <article class="card"><div class="metric">4</div><div class="label">Failure modes</div></article>
+        <article class="card"><div class="metric">6</div><div class="label">Cases</div></article>
+      </div>
+      <h2>Run context</h2>
+      <div class="table-wrap"><table><tbody><tr><th>Run status</th><td>example</td></tr><tr><th>Model</th><td>fixture outputs; no live model</td></tr><tr><th>Model settings</th><td>Not applicable — fixture outputs</td></tr><tr><th>Contract version</th><td>example-v1</td></tr><tr><th>Evaluator version</th><td>example-v1</td></tr><tr><th>Instructions hash</th><td>unavailable</td></tr></tbody></table></div>
+      <h2>Evidence limitations</h2>
+      <p>This public example contains fictionalized reproductions derived from observed failure modes. It is not the private production dataset, does not estimate real-world prevalence, and does not validate a model judge.</p>
+    </section>
+
+    <section class="wrap" id="failures" role="tabpanel" hidden>
+      <h2>Failure taxonomy</h2>
+      <p>Application-specific failures discovered from traces or deliberately induced scenarios. Synthetic provenance must be visible.</p>
+      
+<article class="card">
+  <div class="badge-row">
+    <span class="badge">contact-tone-leakage</span>
+    <span class="badge fail">block</span>
+    <span class="badge">observed</span>
+  </div>
+  <h3>Outgoing tone inflates relationship warmth</h3>
+  <p>The model treats the user&#039;s friendly outbound language as evidence that the recipient engaged.</p>
+  <p><strong>Expected:</strong> Classify warmth from recipient behavior only.</p>
+  <p class="fine">Impact: high · Repeated during manual testing</p>
+</article>
+<article class="card">
+  <div class="badge-row">
+    <span class="badge">contact-invention</span>
+    <span class="badge fail">block</span>
+    <span class="badge">observed</span>
+  </div>
+  <h3>Unusable text creates an invented contact</h3>
+  <p>The model returns a placeholder identity when no person can be identified.</p>
+  <p><strong>Expected:</strong> Return no contact identity when the input contains no identifiable person.</p>
+  <p class="fine">Impact: medium</p>
+</article>
+<article class="card">
+  <div class="badge-row">
+    <span class="badge">premature-state-change</span>
+    <span class="badge fail">block</span>
+    <span class="badge">observed</span>
+  </div>
+  <h3>Application is marked ready before confirmation</h3>
+  <p>The workflow permits a state change on the same turn that it first presents the extracted application.</p>
+  <p><strong>Expected:</strong> Require explicit confirmation in a later user turn before marking the application ready to log.</p>
+  <p class="fine">Impact: critical</p>
+</article>
+<article class="card">
+  <div class="badge-row">
+    <span class="badge">ungrounded-analysis</span>
+    <span class="badge warn">review</span>
+    <span class="badge">observed-derived</span>
+  </div>
+  <h3>Pipeline answer ignores supplied data</h3>
+  <p>The assistant gives generic advice without using the counts and entities supplied in the product state.</p>
+  <p><strong>Expected:</strong> Cite the relevant supplied counts and base the recommendation on them.</p>
+  <p class="fine">Impact: high</p>
+</article>
+    </section>
+
+    <section class="wrap" id="cases" role="tabpanel" hidden>
+      <h2>Cases</h2>
+      
+<article class="case" data-status="fail">
+  <div class="badge-row">
+    <span class="badge">contact-001</span>
+    <span class="badge">observed-derived</span>
+    <span class="badge fail">fail</span>
+  </div>
+  <h3>contact extraction · contact-tone-leakage</h3>
+  <p><strong>Expected behavior:</strong> The extracted warmth is cold because the recipient sent no message.</p>
+  <p><strong>Observed result:</strong> fail · Expected {&quot;name&quot;:&quot;Jordan Lee&quot;,&quot;company&quot;:&quot;Northstar&quot;,&quot;warmth&quot;:&quot;cold&quot;}; received {&quot;name&quot;:&quot;Jordan Lee&quot;,&quot;company&quot;:&quot;Northstar&quot;,&quot;warmth&quot;:&quot;warm&quot;}.</p>
+  <pre>{
+  &quot;name&quot;: &quot;Jordan Lee&quot;,
+  &quot;company&quot;: &quot;Northstar&quot;,
+  &quot;warmth&quot;: &quot;warm&quot;
+}</pre>
+  <details><summary>Input and expected result</summary><h3>Input</h3><pre>{
+  &quot;profile&quot;: &quot;Jordan Lee, 2nd-degree connection, Product Lead at Northstar&quot;,
+  &quot;messages&quot;: [
+    {
+      &quot;sender&quot;: &quot;user&quot;,
+      &quot;text&quot;: &quot;I love what your team is building and would be delighted to connect.&quot;
+    }
+  ]
+}</pre><h3>Expected</h3><pre>{
+  &quot;name&quot;: &quot;Jordan Lee&quot;,
+  &quot;company&quot;: &quot;Northstar&quot;,
+  &quot;warmth&quot;: &quot;cold&quot;
+}</pre></details>
+</article>
+<article class="case" data-status="pass">
+  <div class="badge-row">
+    <span class="badge">contact-002</span>
+    <span class="badge">observed-derived</span>
+    <span class="badge pass">pass</span>
+  </div>
+  <h3>contact extraction · contact-tone-leakage</h3>
+  <p><strong>Expected behavior:</strong> The substantive recipient reply is classified as warm.</p>
+  <p><strong>Observed result:</strong> pass</p>
+  <pre>{
+  &quot;name&quot;: &quot;Morgan Diaz&quot;,
+  &quot;warmth&quot;: &quot;warm&quot;
+}</pre>
+  <details><summary>Input and expected result</summary><h3>Input</h3><pre>{
+  &quot;profile&quot;: &quot;Morgan Diaz, 1st-degree connection, Director at Cedar&quot;,
+  &quot;messages&quot;: [
+    {
+      &quot;sender&quot;: &quot;recipient&quot;,
+      &quot;text&quot;: &quot;Happy to compare notes. Would Tuesday work for a short call?&quot;
+    }
+  ]
+}</pre><h3>Expected</h3><pre>{
+  &quot;warmth&quot;: &quot;warm&quot;
+}</pre></details>
+</article>
+<article class="case" data-status="pass">
+  <div class="badge-row">
+    <span class="badge">contact-003</span>
+    <span class="badge">observed-derived</span>
+    <span class="badge pass">pass</span>
+  </div>
+  <h3>contact extraction · contact-invention</h3>
+  <p><strong>Expected behavior:</strong> No name is invented when the input contains no identifiable person.</p>
+  <p><strong>Observed result:</strong> pass</p>
+  <pre>{
+  &quot;name&quot;: null
+}</pre>
+  <details><summary>Input and expected result</summary><h3>Input</h3><pre>{
+  &quot;raw_text&quot;: &quot;xqz 4488 ???&quot;
+}</pre><h3>Expected</h3><pre>{
+  &quot;name&quot;: null
+}</pre></details>
+</article>
+<article class="case" data-status="pass">
+  <div class="badge-row">
+    <span class="badge">application-001</span>
+    <span class="badge">observed-derived</span>
+    <span class="badge pass">pass</span>
+  </div>
+  <h3>application logging · premature-state-change</h3>
+  <p><strong>Expected behavior:</strong> The first extraction turn presents a summary but cannot authorize logging.</p>
+  <p><strong>Observed result:</strong> pass</p>
+  <pre>{
+  &quot;applications_count&quot;: 1,
+  &quot;readyToLog&quot;: false
+}</pre>
+  <details><summary>Input and expected result</summary><h3>Input</h3><pre>{
+  &quot;turn&quot;: 1,
+  &quot;user_message&quot;: &quot;Applied to Product Lead at Northstar.&quot;
+}</pre><h3>Expected</h3><pre>{
+  &quot;applications_count&quot;: 1,
+  &quot;readyToLog&quot;: false
+}</pre></details>
+</article>
+<article class="case" data-status="pass">
+  <div class="badge-row">
+    <span class="badge">application-002</span>
+    <span class="badge">synthetic</span>
+    <span class="badge pass">pass</span>
+  </div>
+  <h3>application logging · premature-state-change</h3>
+  <p><strong>Expected behavior:</strong> A clear confirmation after a prior summary permits logging.</p>
+  <p><strong>Observed result:</strong> pass</p>
+  <pre>{
+  &quot;readyToLog&quot;: true
+}</pre>
+  <details><summary>Input and expected result</summary><h3>Input</h3><pre>{
+  &quot;turn&quot;: 2,
+  &quot;prior_summary_presented&quot;: true,
+  &quot;user_message&quot;: &quot;Yes, that is correct.&quot;
+}</pre><h3>Expected</h3><pre>{
+  &quot;readyToLog&quot;: true
+}</pre></details>
+</article>
+<article class="case" data-status="pass">
+  <div class="badge-row">
+    <span class="badge">analysis-001</span>
+    <span class="badge">observed-derived</span>
+    <span class="badge pass">pass</span>
+  </div>
+  <h3>pipeline analysis · ungrounded-analysis</h3>
+  <p><strong>Expected behavior:</strong> The answer identifies referrals and cites the supplied zero-referral and three-conversation counts.</p>
+  <p><strong>Observed result:</strong> pass</p>
+  <pre>{
+  &quot;weakest_stage&quot;: &quot;referrals&quot;,
+  &quot;cited_values&quot;: [
+    0,
+    3
+  ]
+}</pre>
+  <details><summary>Input and expected result</summary><h3>Input</h3><pre>{
+  &quot;question&quot;: &quot;Which stage is weakest?&quot;,
+  &quot;state&quot;: {
+    &quot;warm_contacts&quot;: 5,
+    &quot;conversations&quot;: 3,
+    &quot;referrals&quot;: 0
+  }
+}</pre><h3>Expected</h3><pre>{
+  &quot;weakest_stage&quot;: &quot;referrals&quot;,
+  &quot;cited_values&quot;: [
+    0,
+    3
+  ]
+}</pre></details>
+</article>
+    </section>
+
+    <section class="wrap" id="evaluators" role="tabpanel" hidden>
+      <h2>Evaluator choices</h2>
+      <p>All six example cases use deterministic subset assertions. This is sufficient for structured fields, counts, grounding markers, and approval state. Natural-language usefulness remains outside this small public example.</p>
+      <div class="table-wrap"><table><thead><tr><th>Case</th><th>Failure mode</th><th>Evaluator</th><th>Operation</th></tr></thead><tbody><tr><td>contact-001</td><td>contact-tone-leakage</td><td>deterministic</td><td>subset_equal</td></tr><tr><td>contact-002</td><td>contact-tone-leakage</td><td>deterministic</td><td>subset_equal</td></tr><tr><td>contact-003</td><td>contact-invention</td><td>deterministic</td><td>subset_equal</td></tr><tr><td>application-001</td><td>premature-state-change</td><td>deterministic</td><td>subset_equal</td></tr><tr><td>application-002</td><td>premature-state-change</td><td>deterministic</td><td>subset_equal</td></tr><tr><td>analysis-001</td><td>ungrounded-analysis</td><td>deterministic</td><td>subset_equal</td></tr></tbody></table></div>
+      <h2>Model-judge calibration</h2>
+      <p>No model judge is used. Adding one would require human-labeled train, development, and untouched test sets plus separate true-positive and true-negative reporting.</p>
+    </section>
+
+    <section class="wrap" id="results" role="tabpanel" hidden>
+      <h2>Latest run</h2>
+      <div class="grid">
+        <article class="card"><div class="metric">5</div><div class="label">Passed</div></article>
+        <article class="card"><div class="metric">1</div><div class="label">Failed</div></article>
+        <article class="card"><div class="metric">6</div><div class="label">Total</div></article>
+      </div>
+      <p class="decision">BLOCK: Blocking failures remain: contact-001.</p>
+      <div class="table-wrap"><table><thead><tr><th>Case</th><th>Failure mode</th><th>Status</th><th>Observed</th><th>Details</th></tr></thead><tbody><tr><td>contact-001</td><td>contact-tone-leakage</td><td><span class="badge fail">fail</span></td><td><pre>{
+  &quot;name&quot;: &quot;Jordan Lee&quot;,
+  &quot;company&quot;: &quot;Northstar&quot;,
+  &quot;warmth&quot;: &quot;warm&quot;
+}</pre></td><td>Expected {&quot;name&quot;:&quot;Jordan Lee&quot;,&quot;company&quot;:&quot;Northstar&quot;,&quot;warmth&quot;:&quot;cold&quot;}; received {&quot;name&quot;:&quot;Jordan Lee&quot;,&quot;company&quot;:&quot;Northstar&quot;,&quot;warmth&quot;:&quot;warm&quot;}.</td></tr><tr><td>contact-002</td><td>contact-tone-leakage</td><td><span class="badge pass">pass</span></td><td><pre>{
+  &quot;name&quot;: &quot;Morgan Diaz&quot;,
+  &quot;warmth&quot;: &quot;warm&quot;
+}</pre></td><td></td></tr><tr><td>contact-003</td><td>contact-invention</td><td><span class="badge pass">pass</span></td><td><pre>{
+  &quot;name&quot;: null
+}</pre></td><td></td></tr><tr><td>application-001</td><td>premature-state-change</td><td><span class="badge pass">pass</span></td><td><pre>{
+  &quot;applications_count&quot;: 1,
+  &quot;readyToLog&quot;: false
+}</pre></td><td></td></tr><tr><td>application-002</td><td>premature-state-change</td><td><span class="badge pass">pass</span></td><td><pre>{
+  &quot;readyToLog&quot;: true
+}</pre></td><td></td></tr><tr><td>analysis-001</td><td>ungrounded-analysis</td><td><span class="badge pass">pass</span></td><td><pre>{
+  &quot;weakest_stage&quot;: &quot;referrals&quot;,
+  &quot;cited_values&quot;: [
+    0,
+    3
+  ]
+}</pre></td><td></td></tr></tbody></table></div>
+      <p class="fine">The machine-readable result file is authoritative. This report is a review surface.</p>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const tabs = [...document.querySelectorAll('[role="tab"]')];
+      const panels = [...document.querySelectorAll('[role="tabpanel"]')];
+      function activate(name, focus = false, updateHash = true) {
+        const selected = tabs.find(tab => tab.dataset.panel === name) || tabs[0];
+        tabs.forEach(tab => {
+          const active = tab === selected;
+          tab.setAttribute('aria-selected', String(active));
+          tab.tabIndex = active ? 0 : -1;
+        });
+        panels.forEach(panel => { panel.hidden = panel.id !== selected.dataset.panel; });
+        if (focus) selected.focus();
+        if (updateHash) history.replaceState(null, '', `#${selected.dataset.panel}`);
+      }
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => activate(tab.dataset.panel));
+        tab.addEventListener('keydown', event => {
+          let next = null;
+          if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+          if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+          if (event.key === 'Home') next = 0;
+          if (event.key === 'End') next = tabs.length - 1;
+          if (next === null) return;
+          event.preventDefault();
+          activate(tabs[next].dataset.panel, true);
+        });
+      });
+      addEventListener('hashchange', () => activate(location.hash.slice(1), false, false));
+      activate(location.hash.slice(1) || 'overview', false, false);
+      document.getElementById('theme-toggle').addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = next;
+        try { localStorage.setItem('eval-theme', next); } catch (_) {}
+      });
+    })();
+  </script>
+</body>
+</html>

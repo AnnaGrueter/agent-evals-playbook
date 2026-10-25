@@ -1,0 +1,10 @@
+{
+  "outputs": {
+    "contact-001": {"name": "Jordan Lee", "company": "Northstar", "warmth": "warm"},
+    "contact-002": {"name": "Morgan Diaz", "warmth": "warm"},
+    "contact-003": {"name": null},
+    "application-001": {"applications_count": 1, "readyToLog": false},
+    "application-002": {"readyToLog": true},
+    "analysis-001": {"weakest_stage": "referrals", "cited_values": [0, 3]}
+  }
+}

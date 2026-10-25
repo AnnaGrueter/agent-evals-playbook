@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build AI Evals"
+  short_description: "Turn observed AI failures into regression tests"
+  default_prompt: "Use $build-ai-evals to inspect this AI workflow, identify failure modes, and build a reusable eval suite."

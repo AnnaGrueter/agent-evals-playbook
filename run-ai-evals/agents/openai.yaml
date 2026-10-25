@@ -1,0 +1,4 @@
+interface:
+  display_name: "Run AI Evals"
+  short_description: "Run a frozen eval suite without changing its rules"
+  default_prompt: "Use $run-ai-evals to execute this frozen eval suite and regenerate its report."

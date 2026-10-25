@@ -1,0 +1,45 @@
+{
+  "failure_modes": [
+    {
+      "id": "contact-tone-leakage",
+      "name": "Outgoing tone inflates relationship warmth",
+      "description": "The model treats the user's friendly outbound language as evidence that the recipient engaged.",
+      "source": "observed",
+      "impact": "high",
+      "frequency": "Repeated during manual testing",
+      "expected_behavior": "Classify warmth from recipient behavior only.",
+      "release_policy": "block",
+      "trace_refs": ["sanitized-trace-contact-01"]
+    },
+    {
+      "id": "contact-invention",
+      "name": "Unusable text creates an invented contact",
+      "description": "The model returns a placeholder identity when no person can be identified.",
+      "source": "observed",
+      "impact": "medium",
+      "expected_behavior": "Return no contact identity when the input contains no identifiable person.",
+      "release_policy": "block",
+      "trace_refs": ["sanitized-trace-contact-02"]
+    },
+    {
+      "id": "premature-state-change",
+      "name": "Application is marked ready before confirmation",
+      "description": "The workflow permits a state change on the same turn that it first presents the extracted application.",
+      "source": "observed",
+      "impact": "critical",
+      "expected_behavior": "Require explicit confirmation in a later user turn before marking the application ready to log.",
+      "release_policy": "block",
+      "trace_refs": ["sanitized-trace-application-01"]
+    },
+    {
+      "id": "ungrounded-analysis",
+      "name": "Pipeline answer ignores supplied data",
+      "description": "The assistant gives generic advice without using the counts and entities supplied in the product state.",
+      "source": "observed-derived",
+      "impact": "high",
+      "expected_behavior": "Cite the relevant supplied counts and base the recommendation on them.",
+      "release_policy": "review",
+      "trace_refs": ["sanitized-trace-analysis-01"]
+    }
+  ]
+}

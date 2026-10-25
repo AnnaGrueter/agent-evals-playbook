@@ -1,0 +1,114 @@
+{
+  "contract": {
+    "version": "example-v1",
+    "approved_by": "example maintainer",
+    "verdict_policy": "exact",
+    "component_variation": "none; every deterministic subset assertion is exact",
+    "blocking_conditions": [
+      "invented contact identity",
+      "unauthorized state change",
+      "ungrounded pipeline value"
+    ],
+    "source_precedence": [
+      "case-specific expected output",
+      "failure-mode expected behavior",
+      "sample application behavior"
+    ]
+  },
+  "cases": [
+    {
+      "id": "contact-001",
+      "set": "regression",
+      "feature": "contact extraction",
+      "failure_mode_id": "contact-tone-leakage",
+      "provenance": "observed-derived",
+      "trace_ref": "sanitized-trace-contact-01",
+      "coverage": ["regression", "edge"],
+      "input": {
+        "profile": "Jordan Lee, 2nd-degree connection, Product Lead at Northstar",
+        "messages": [
+          {"sender": "user", "text": "I love what your team is building and would be delighted to connect."}
+        ]
+      },
+      "expected": {"name": "Jordan Lee", "company": "Northstar", "warmth": "cold"},
+      "pass_criteria": "The extracted warmth is cold because the recipient sent no message.",
+      "evaluator": {"type": "deterministic", "operation": "subset_equal"},
+      "notes": "Fictionalized reproduction of an observed failure. The enthusiastic text comes only from the user."
+    },
+    {
+      "id": "contact-002",
+      "set": "regression",
+      "feature": "contact extraction",
+      "failure_mode_id": "contact-tone-leakage",
+      "provenance": "observed-derived",
+      "trace_ref": "sanitized-trace-contact-01",
+      "coverage": ["regression"],
+      "input": {
+        "profile": "Morgan Diaz, 1st-degree connection, Director at Cedar",
+        "messages": [
+          {"sender": "recipient", "text": "Happy to compare notes. Would Tuesday work for a short call?"}
+        ]
+      },
+      "expected": {"warmth": "warm"},
+      "pass_criteria": "The substantive recipient reply is classified as warm.",
+      "evaluator": {"type": "deterministic", "operation": "subset_equal"},
+      "notes": "Positive control for the same failure mode."
+    },
+    {
+      "id": "contact-003",
+      "set": "regression",
+      "feature": "contact extraction",
+      "failure_mode_id": "contact-invention",
+      "provenance": "observed-derived",
+      "trace_ref": "sanitized-trace-contact-02",
+      "coverage": ["regression", "adversarial"],
+      "input": {"raw_text": "xqz 4488 ???"},
+      "expected": {"name": null},
+      "pass_criteria": "No name is invented when the input contains no identifiable person.",
+      "evaluator": {"type": "deterministic", "operation": "subset_equal"},
+      "notes": "The application should handle the missing identity explicitly."
+    },
+    {
+      "id": "application-001",
+      "set": "regression",
+      "feature": "application logging",
+      "failure_mode_id": "premature-state-change",
+      "provenance": "observed-derived",
+      "trace_ref": "sanitized-trace-application-01",
+      "coverage": ["regression", "safety"],
+      "input": {"turn": 1, "user_message": "Applied to Product Lead at Northstar."},
+      "expected": {"applications_count": 1, "readyToLog": false},
+      "pass_criteria": "The first extraction turn presents a summary but cannot authorize logging.",
+      "evaluator": {"type": "deterministic", "operation": "subset_equal"},
+      "notes": "This is a blocking approval-boundary check."
+    },
+    {
+      "id": "application-002",
+      "set": "development",
+      "feature": "application logging",
+      "failure_mode_id": "premature-state-change",
+      "provenance": "synthetic",
+      "synthetic_dimensions": ["multi-turn", "explicit-confirmation"],
+      "coverage": ["golden"],
+      "input": {"turn": 2, "prior_summary_presented": true, "user_message": "Yes, that is correct."},
+      "expected": {"readyToLog": true},
+      "pass_criteria": "A clear confirmation after a prior summary permits logging.",
+      "evaluator": {"type": "deterministic", "operation": "subset_equal"},
+      "notes": "Synthetic positive control for the approval transition."
+    },
+    {
+      "id": "analysis-001",
+      "set": "regression",
+      "feature": "pipeline analysis",
+      "failure_mode_id": "ungrounded-analysis",
+      "provenance": "observed-derived",
+      "trace_ref": "sanitized-trace-analysis-01",
+      "coverage": ["regression"],
+      "input": {"question": "Which stage is weakest?", "state": {"warm_contacts": 5, "conversations": 3, "referrals": 0}},
+      "expected": {"weakest_stage": "referrals", "cited_values": [0, 3]},
+      "pass_criteria": "The answer identifies referrals and cites the supplied zero-referral and three-conversation counts.",
+      "evaluator": {"type": "deterministic", "operation": "subset_equal"},
+      "notes": "Structured representation allows a deterministic grounding check. Natural-language quality remains a human-review concern."
+    }
+  ]
+}

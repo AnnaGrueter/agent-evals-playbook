@@ -1,0 +1,40 @@
+{
+  "name": "agent-evals-playbook",
+  "version": "0.1.0",
+  "description": "Failure-first agent skills for building, freezing, running, and reviewing meaningful AI evals with a standalone HTML report.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "keywords": [
+    "ai-evals",
+    "agent-evals",
+    "ai-agents",
+    "agent-skills",
+    "llm-evaluation",
+    "regression-testing",
+    "evals",
+    "codex",
+    "claude-code",
+    "cursor",
+    "llmops",
+    "html-report"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnnaGrueter/agent-evals-playbook.git"
+  },
+  "homepage": "https://github.com/AnnaGrueter/agent-evals-playbook#readme",
+  "bugs": {
+    "url": "https://github.com/AnnaGrueter/agent-evals-playbook/issues"
+  },
+  "scripts": {
+    "validate": "node build-ai-evals/scripts/validate_eval_suite.mjs examples/relationship-pipeline",
+    "render": "node build-ai-evals/scripts/render_report.mjs examples/relationship-pipeline",
+    "privacy": "node build-ai-evals/scripts/scan_public_repo.mjs .",
+    "test": "node --test tests/*.test.mjs",
+    "check": "npm run validate && npm run render && npm run privacy && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{PRODUCT_NAME}} | Eval report</title>
+  <script>
+    try {
+      const savedTheme = localStorage.getItem('eval-theme');
+      if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+    } catch (_) {}
+  </script>
+  <style>
+    :root {
+      --canvas: #f6f3ec;
+      --surface: #fffdf8;
+      --ink: #20201d;
+      --muted: #6d6a62;
+      --line: #d9d4c8;
+      --accent: #305b4f;
+      --accent-soft: #dfebe6;
+      --pass: #237346;
+      --pass-soft: #e1f1e7;
+      --fail: #aa3434;
+      --fail-soft: #f8e3e0;
+      --warn: #8a6418;
+      --warn-soft: #f3ead5;
+      color-scheme: light;
+    }
+    :root[data-theme="dark"] {
+      --canvas: #171816;
+      --surface: #21231f;
+      --ink: #f2efe7;
+      --muted: #aaa69d;
+      --line: #3d403a;
+      --accent: #9bcdb9;
+      --accent-soft: #263b33;
+      --pass: #7bd39d;
+      --pass-soft: #20382a;
+      --fail: #ff9890;
+      --fail-soft: #432524;
+      --warn: #e3c375;
+      --warn-soft: #3b321f;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--canvas); }
+    body {
+      margin: 0;
+      padding: 0 20px 80px;
+      overflow-x: hidden;
+      background: var(--canvas);
+      color: var(--ink);
+      font: 15px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button { font: inherit; }
+    .wrap { width: min(100%, 980px); max-width: 100%; min-width: 0; margin-inline: auto; }
+    header { padding: 48px 0 20px; display: flex; gap: 20px; align-items: flex-start; }
+    header > div { flex: 1; min-width: 0; }
+    .eyebrow { margin: 0 0 8px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    h1 { margin: 0; font: 750 clamp(32px, 6vw, 52px)/1.05 Georgia, serif; letter-spacing: -.035em; }
+    .tagline { max-width: 70ch; margin: 14px 0 0; color: var(--muted); font-size: 17px; }
+    .theme-toggle { flex: none; border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; background: var(--surface); color: var(--ink); cursor: pointer; }
+    nav { position: sticky; top: 0; z-index: 4; display: flex; gap: 8px; padding: 12px 0; overflow-x: auto; background: var(--canvas); border-bottom: 1px solid var(--line); }
+    [role="tab"] { flex: none; border: 0; border-radius: 999px; padding: 8px 14px; background: transparent; color: var(--muted); font-weight: 700; cursor: pointer; }
+    [role="tab"][aria-selected="true"] { background: var(--ink); color: var(--canvas); }
+    [role="tab"]:focus-visible, .theme-toggle:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    [role="tabpanel"] { padding-top: 34px; }
+    [role="tabpanel"][hidden] { display: none; }
+    h2 { margin: 42px 0 8px; font-size: 24px; letter-spacing: -.02em; }
+    h2:first-child { margin-top: 0; }
+    h3 { margin: 26px 0 7px; font-size: 17px; }
+    p { max-width: 75ch; }
+    h1, h2, h3, p, td { overflow-wrap: anywhere; }
+    pre { overflow: auto; white-space: pre-wrap; word-break: break-word; padding: 14px; border-radius: 10px; background: var(--accent-soft); }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 18px 0; }
+    .card { padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    .card h3 { margin-top: 0; }
+    .meta, .badge-row { display: flex; flex-wrap: wrap; gap: 7px; }
+    .badge { display: inline-block; border-radius: 999px; padding: 3px 9px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 750; }
+    .pass { background: var(--pass-soft); color: var(--pass); }
+    .fail { background: var(--fail-soft); color: var(--fail); }
+    .warn { background: var(--warn-soft); color: var(--warn); }
+    .metric { font-size: 30px; font-weight: 800; }
+    .label { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .case { margin: 16px 0; padding: 18px; border-left: 4px solid var(--line); background: var(--surface); }
+    .case[data-status="pass"] { border-left-color: var(--pass); }
+    .case[data-status="fail"] { border-left-color: var(--fail); }
+    .case h3 { margin-top: 0; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 660px; }
+    th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .07em; }
+    .decision { padding: 18px; border-radius: 12px; background: var(--fail-soft); color: var(--fail); font-weight: 700; }
+    .fine { color: var(--muted); font-size: 13px; }
+    @media (max-width: 640px) {
+      body { padding-inline: 15px; }
+      header { padding-top: 30px; flex-wrap: wrap; }
+      .grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      [role="tabpanel"]:not([hidden]) { animation: reveal 150ms ease-out; }
+      @keyframes reveal { from { opacity: 0; transform: translateY(3px); } }
+    }
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <div>
+      <p class="eyebrow">Eval report · {{LAST_UPDATED}}</p>
+      <h1>{{PRODUCT_NAME}}</h1>
+      <p class="tagline">{{TAGLINE}}</p>
+    </div>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">Theme</button>
+  </header>
+
+  <nav class="wrap" role="tablist" aria-label="Eval report sections">
+    <button role="tab" aria-selected="true" aria-controls="overview" data-panel="overview">Overview</button>
+    <button role="tab" aria-selected="false" aria-controls="failures" data-panel="failures" tabindex="-1">Failure Modes</button>
+    <button role="tab" aria-selected="false" aria-controls="cases" data-panel="cases" tabindex="-1">Cases</button>
+    <button role="tab" aria-selected="false" aria-controls="evaluators" data-panel="evaluators" tabindex="-1">Evaluators</button>
+    <button role="tab" aria-selected="false" aria-controls="results" data-panel="results" tabindex="-1">Results</button>
+  </nav>
+
+  <main>
+    <section class="wrap" id="overview" role="tabpanel">
+      <h2>Evaluation contract</h2>
+      <p>{{EVALUATION_CONTRACT}}</p>
+      <div class="grid">
+        <article class="card"><div class="metric">{{TRACE_COUNT}}</div><div class="label">Traces reviewed</div></article>
+        <article class="card"><div class="metric">{{FAILURE_MODE_COUNT}}</div><div class="label">Failure modes</div></article>
+        <article class="card"><div class="metric">{{CASE_COUNT}}</div><div class="label">Cases</div></article>
+      </div>
+      <h2>Run context</h2>
+      {{RUN_CONTEXT}}
+      <h2>Evidence limitations</h2>
+      <p>{{LIMITATIONS}}</p>
+    </section>
+
+    <section class="wrap" id="failures" role="tabpanel" hidden>
+      <h2>Failure taxonomy</h2>
+      <p>Application-specific failures discovered from traces or deliberately induced scenarios. Synthetic provenance must be visible.</p>
+      {{FAILURE_MODE_CARDS}}
+    </section>
+
+    <section class="wrap" id="cases" role="tabpanel" hidden>
+      <h2>Cases</h2>
+      {{CASE_CARDS}}
+    </section>
+
+    <section class="wrap" id="evaluators" role="tabpanel" hidden>
+      <h2>Evaluator choices</h2>
+      <p>{{EVALUATOR_SUMMARY}}</p>
+      {{EVALUATOR_TABLE}}
+      <h2>Model-judge calibration</h2>
+      <p>{{JUDGE_CALIBRATION}}</p>
+    </section>
+
+    <section class="wrap" id="results" role="tabpanel" hidden>
+      <h2>Latest run</h2>
+      <div class="grid">
+        <article class="card"><div class="metric">{{PASSED}}</div><div class="label">Passed</div></article>
+        <article class="card"><div class="metric">{{FAILED}}</div><div class="label">Failed</div></article>
+        <article class="card"><div class="metric">{{TOTAL}}</div><div class="label">Total</div></article>
+      </div>
+      <p class="decision">{{RELEASE_DECISION}}</p>
+      {{RESULTS_TABLE}}
+      <p class="fine">The machine-readable result file is authoritative. This report is a review surface.</p>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const tabs = [...document.querySelectorAll('[role="tab"]')];
+      const panels = [...document.querySelectorAll('[role="tabpanel"]')];
+      function activate(name, focus = false, updateHash = true) {
+        const selected = tabs.find(tab => tab.dataset.panel === name) || tabs[0];
+        tabs.forEach(tab => {
+          const active = tab === selected;
+          tab.setAttribute('aria-selected', String(active));
+          tab.tabIndex = active ? 0 : -1;
+        });
+        panels.forEach(panel => { panel.hidden = panel.id !== selected.dataset.panel; });
+        if (focus) selected.focus();
+        if (updateHash) history.replaceState(null, '', `#${selected.dataset.panel}`);
+      }
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => activate(tab.dataset.panel));
+        tab.addEventListener('keydown', event => {
+          let next = null;
+          if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+          if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+          if (event.key === 'Home') next = 0;
+          if (event.key === 'End') next = tabs.length - 1;
+          if (next === null) return;
+          event.preventDefault();
+          activate(tabs[next].dataset.panel, true);
+        });
+      });
+      addEventListener('hashchange', () => activate(location.hash.slice(1), false, false));
+      activate(location.hash.slice(1) || 'overview', false, false);
+      document.getElementById('theme-toggle').addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = next;
+        try { localStorage.setItem('eval-theme', next); } catch (_) {}
+      });
+    })();
+  </script>
+</body>
+</html>
